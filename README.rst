@@ -29,3 +29,4 @@ Configuration
 
 ...
 
+historymanager-purge-older-than?date_limit=2013/01/01

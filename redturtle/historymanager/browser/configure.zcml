@@ -5,6 +5,13 @@
 
   <browser:page
     for="*"
+    name="historymanager-dereference"
+    class=".manager.DereferenceView"
+    permission="cmf.ManagePortal"
+  />
+
+  <browser:page
+    for="*"
     name="historymanager-local-purge"
     class=".manager.LocalPurgeView"
     permission="cmf.ManagePortal"
@@ -12,15 +19,15 @@
 
   <browser:page
     for="*"
-    name="historymanager-purge-deleted"
-    class=".manager.PurgeDeletedView"
+    name="historymanager-purge-older-than"
+    class=".manager.PurgeOlderThanView"
     permission="cmf.ManagePortal"
   />
 
   <browser:page
     for="*"
-    name="historymanager-dereference"
-    class=".manager.DereferenceView"
+    name="historymanager-purge-deleted"
+    class=".manager.PurgeDeletedView"
     permission="cmf.ManagePortal"
   />
 

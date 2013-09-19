@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from DateTime import DateTime
 from Products.Five.browser import BrowserView
 from Products.CMFCore.utils import getToolByName
 from Products.CMFEditions.utilities import dereference
@@ -34,6 +35,12 @@ class Manager(BrowserView):
         ''' Return the portal_historiesstorage tool
         '''
         return dereference(target or self.context)
+
+    def dereference_by_id(self, history_id):
+        ''' Dereference an object by history_id
+        '''
+        return dereference(history_id=history_id,
+                           zodb_hook=self.context)
 
     @property
     @memoize
@@ -73,7 +80,13 @@ class Manager(BrowserView):
         '''
         del self.historiesstorage._getShadowStorage()._storage[history_id]
 
-    def purge_all(self, history_id=None):
+    @memoize
+    def filtered_history_ids(self):
+        ''' This will return a list of history_ids to be purged
+        '''
+        return []
+
+    def purge_all_revisions(self, history_id=None):
         ''' Nukes the portal history for history_id
         '''
         comment = "Purged by %s" % self.__name__
@@ -90,17 +103,25 @@ class Manager(BrowserView):
             self.archivist.purge(history_id=history_id,
                                  selector=0,
                                  metadata=metadata)
-
         self.remove_from_shadowstorage(history_id)
 
-
-class PurgeDeletedView(Manager):
-    ''' Purge all the revisions for this context
-    '''
     def __call__(self):
         ''' Not to be done like this
         '''
-        return 1
+        history_ids = self.filtered_history_ids()
+        if not history_ids:
+            return 'No ids'
+        map(self.purge_all_revisions, history_ids)
+        return '\n'.join(map(str, history_ids))
+
+
+class DereferenceView(Manager):
+    ''' Expose the dereference method in this context
+    '''
+    def __call__(self):
+        ''' Expose the dereference method in this context
+        '''
+        return self.dereference()
 
 
 class LocalPurgeView(Manager):
@@ -113,16 +134,39 @@ class LocalPurgeView(Manager):
         context  # pylint shut up
 
         history = self.get_history_for(history_id)
-
         len_before = history.getLength(True)
-        self.purge_all(history_id)
+
+        self.purge_all_revisions(history_id)
         return "Cleared %s versions" % len_before
 
 
-class DereferenceView(Manager):
-    ''' Expose the dereference method in this context
+class PurgeOlderThanView(Manager):
+    ''' Purge all the revisions for objects modifed before some date
+
+    The should be passed in the request
+
     '''
-    def __call__(self):
-        ''' Expose the dereference method in this context
+
+    @memoize
+    def filtered_history_ids(self):
+        ''' This will return a list of history_ids to be purged
         '''
-        return self.dereference()
+        date_limit = DateTime(self.request.get('date_limit'))
+        history_ids = [existing['history_id']
+                       for existing in self.existing_working_copies]
+        dereferences = [self.dereference_by_id(history_id)
+                        for history_id in history_ids]
+        return [history_id
+                for obj, history_id
+                in dereferences if obj.modified() < date_limit]
+
+
+class PurgeDeletedView(Manager):
+    ''' Purge all the revisions for this context
+    '''
+    @memoize
+    def filtered_history_ids(self):
+        ''' This will return a list of history_ids to be purged
+        '''
+        return [deleted['history_id']
+                for deleted in self.deleted_working_copies]
