@@ -17,6 +17,16 @@ class Manager(BrowserView):
         '''
         return getToolByName(self.context, 'portal_archivist')
 
+    def get_date_limit(self):
+        ''' Get's from the request a date_limit
+        If not passed it will be now
+        '''
+        date_limit = self.request.get('date_limit', '')
+        if date_limit:
+            return DateTime(date_limit)
+        else:
+            return DateTime()
+
     @property
     @memoize
     def historiesstorage(self):
@@ -78,7 +88,8 @@ class Manager(BrowserView):
     def remove_from_shadowstorage(self, history_id):
         ''' Remove an history_id from the shadow storage
         '''
-        del self.historiesstorage._getShadowStorage()._storage[history_id]
+        storage = self.historiesstorage._getShadowStorage()._storage
+        return storage.pop(history_id, None)
 
     @memoize
     def filtered_history_ids(self):
@@ -146,12 +157,11 @@ class PurgeOlderThanView(Manager):
     The should be passed in the request
 
     '''
-
     @memoize
     def filtered_history_ids(self):
         ''' This will return a list of history_ids to be purged
         '''
-        date_limit = DateTime(self.request.get('date_limit'))
+        date_limit = self.get_date_limit()
         history_ids = [existing['history_id']
                        for existing in self.existing_working_copies]
         dereferences = [self.dereference_by_id(history_id)
@@ -159,6 +169,27 @@ class PurgeOlderThanView(Manager):
         return [history_id
                 for obj, history_id
                 in dereferences if obj.modified() < date_limit]
+
+
+class PurgeInPathView(Manager):
+    ''' Purge stuff under a path
+    '''
+    @memoize
+    def filtered_history_ids(self):
+        ''' This will return a list of history_ids to be purged under this path
+        You can optionally filter them:
+         - by portal_type by passing a portal_type argument in the request
+         - by setting a date_limit parameter
+        '''
+        pc = getToolByName(self.context, 'portal_catalog')
+        path = '/'.join(self.context.getPhysicalPath())
+        portal_type = self.request.get('portal_type', '')
+        max_modified = {'query': self.get_date_limit(),
+                        'range': 'max'}
+
+        brains = pc(path=path, portal_type=portal_type, modified=max_modified)
+        return [self.dereference(brain.getObject())[1]
+                for brain in brains]
 
 
 class PurgeDeletedView(Manager):

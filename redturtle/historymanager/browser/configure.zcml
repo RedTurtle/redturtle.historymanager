@@ -12,15 +12,15 @@
 
   <browser:page
     for="*"
-    name="historymanager-local-purge"
+    name="historymanager-purge-this"
     class=".manager.LocalPurgeView"
     permission="cmf.ManagePortal"
   />
 
   <browser:page
     for="*"
-    name="historymanager-purge-older-than"
-    class=".manager.PurgeOlderThanView"
+    name="historymanager-purge-thispath"
+    class=".manager.PurgeInPathView"
     permission="cmf.ManagePortal"
   />
 
