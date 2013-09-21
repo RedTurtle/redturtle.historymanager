@@ -103,10 +103,10 @@ class Manager(BrowserView):
         comment = "Purged by %s" % self.__name__
         metadata = {'sys_metadata': {'comment': comment}}
 
-        if history_id:
+        if not history_id:
             context = self.context
         else:
-            context, history_id = self.dereference(context)
+            context, history_id = self.dereference_by_id(history_id)
 
         history = self.historiesstorage.getHistory(history_id, countPurged=False)
         for revision in history:
@@ -119,7 +119,7 @@ class Manager(BrowserView):
     def __call__(self):
         ''' Not to be done like this
         '''
-        history_ids = self.filtered_history_ids()
+        history_ids = filter(bool, self.filtered_history_ids())
         if not history_ids:
             return 'No ids'
         map(self.purge_all_revisions, history_ids)
