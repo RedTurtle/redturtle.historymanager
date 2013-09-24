@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
+from BTrees.OOBTree import OOBTree
 from DateTime import DateTime
-from Products.Five.browser import BrowserView
 from Products.CMFCore.utils import getToolByName
 from Products.CMFEditions.utilities import dereference
+from Products.Five.browser import BrowserView
 from plone.memoize.view import memoize
 
 
@@ -52,6 +53,21 @@ class Manager(BrowserView):
         return dereference(history_id=history_id,
                            zodb_hook=self.context)
 
+    def get_zvc_ids(self, history_id):
+        ''' Get's the zvc ids
+
+        Those are the ids in the versions repo
+        '''
+        history = self.get_history_for(history_id)
+        if not history:
+            return set()
+
+        keys = set([self.historiesstorage._getZVCAccessInfo(history_id,
+                                                            selector,
+                                                            True)[0]
+                    for selector in history._available])
+        return keys
+
     @property
     @memoize
     def purgepolicy(self):
@@ -91,29 +107,30 @@ class Manager(BrowserView):
         storage = self.historiesstorage._getShadowStorage()._storage
         return storage.pop(history_id, None)
 
+    def remove_from_versions(self, keys):
+        ''' Remove the given keys from the repo
+        '''
+        repo = self.versions_repo
+        for key in keys:
+            zope_version_history = repo._histories.get(key, None)
+            if zope_version_history:
+                zope_version_history.versions = OOBTree
+
     @memoize
     def filtered_history_ids(self):
         ''' This will return a list of history_ids to be purged
         '''
         return []
 
-    def purge_all_revisions(self, history_id=None):
+    def purge_all_revisions(self, history_id):
         ''' Nukes the portal history for history_id
         '''
-        comment = "Purged by %s" % self.__name__
-        metadata = {'sys_metadata': {'comment': comment}}
-
         if not history_id:
-            context = self.context
-        else:
-            context, history_id = self.dereference_by_id(history_id)
+            raise ValueError("history_id invalid: %r" % history_id)
 
-        history = self.historiesstorage.getHistory(history_id, countPurged=False)
-        for revision in history:
-            revision  # pylint
-            self.archivist.purge(history_id=history_id,
-                                 selector=0,
-                                 metadata=metadata)
+        zvc_keys = self.get_zvc_ids(history_id)
+
+        self.remove_from_versions(zvc_keys)
         self.remove_from_shadowstorage(history_id)
 
     def __call__(self):
@@ -143,8 +160,9 @@ class LocalPurgeView(Manager):
         '''
         context, history_id = self.dereference()
         context  # pylint shut up
-
         history = self.get_history_for(history_id)
+        if not history:
+            return "No history"
         len_before = history.getLength(True)
 
         self.purge_all_revisions(history_id)

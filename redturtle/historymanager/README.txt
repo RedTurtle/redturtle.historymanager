@@ -115,6 +115,7 @@ We can pass a date_limit parameter in the request
 Without date_limit we have 6 objects.
 Setting a date_limit and modyfying 2 objects we expect to have 4 objects 
     >>> self.unmemoize_request()
+
 Now we set the date_limit
     >>> self.request.set('date_limit', str(DateTime()))
     >>> self.edit_page('page0')
