@@ -1,2 +1,6 @@
 graft redturtle
 include *.cfg *.rst *.in
+include *.py
+recursive-include docs *.py
+recursive-include docs *.rst
+
