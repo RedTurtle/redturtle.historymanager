@@ -114,7 +114,7 @@ class Manager(BrowserView):
         for key in keys:
             zope_version_history = repo._histories.get(key, None)
             if zope_version_history:
-                zope_version_history.versions = OOBTree
+                zope_version_history.versions = OOBTree()
 
     @memoize
     def filtered_history_ids(self):

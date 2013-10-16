@@ -5,12 +5,13 @@ Changelog
 0.1.1 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Fixed OOBTree not initialized
+  [ale-rt]
 
 
 0.1.0 (2013-10-08)
 ------------------
 
 - Initial release.
-  [alert]
+  [ale-rt]
 
