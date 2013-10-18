@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from BTrees.OOBTree import OOBTree
 from DateTime import DateTime
+from Products.Archetypes.utils import shasattr
 from Products.CMFCore.utils import getToolByName
 from Products.CMFEditions.utilities import dereference
 from Products.Five.browser import BrowserView
@@ -20,13 +21,11 @@ class Manager(BrowserView):
 
     def get_date_limit(self):
         ''' Get's from the request a date_limit
-        If not passed it will be now
+        If not passed it will be None
         '''
         date_limit = self.request.get('date_limit', '')
         if date_limit:
             return DateTime(date_limit)
-        else:
-            return DateTime()
 
     @property
     @memoize
@@ -116,6 +115,16 @@ class Manager(BrowserView):
             if zope_version_history:
                 zope_version_history.versions = OOBTree()
 
+    def remove_version_id(self, history_id):
+        ''' Remove the given keys from the repo
+        '''
+        obj = self.dereference_by_id(history_id)[0]
+        if not obj:
+            return
+        if not shasattr(obj, 'version_id'):
+            return
+        delattr(obj, 'version_id')
+
     @memoize
     def filtered_history_ids(self):
         ''' This will return a list of history_ids to be purged
@@ -132,6 +141,8 @@ class Manager(BrowserView):
 
         self.remove_from_versions(zvc_keys)
         self.remove_from_shadowstorage(history_id)
+
+        self.remove_version_id(history_id)
 
     def __call__(self):
         ''' Not to be done like this
@@ -204,7 +215,6 @@ class PurgeInPathView(Manager):
         portal_type = self.request.get('portal_type', '')
         max_modified = {'query': self.get_date_limit(),
                         'range': 'max'}
-
         brains = pc(path=path, portal_type=portal_type, modified=max_modified)
         return [self.dereference(brain.getObject())[1]
                 for brain in brains]

@@ -9,15 +9,19 @@ We need to be logged in as Manager
 
 We need some stuff
     >>> from DateTime import DateTime
+    >>> from Products.Archetypes.utils import shasattr
     >>> from Products.CMFCore.utils import getToolByName
     >>> from redturtle.historymanager.browser.manager import Manager
+    >>> from time import sleep
     >>> manager = Manager(self.portal, self.request)
-    
+
 We prepare some documents
     >>> self.prepare_folder()
     ['page0', 'page1', 'page2', 'page3', 'page4']
 
 They are not under version control now
+    >>> shasattr(self.folder.page1, 'version_id')
+    False
     >>> self.edit_page('page1')
     >>> self.edit_page('page1')
     >>> self.edit_page('page1')
@@ -39,6 +43,8 @@ And we can purge them
     >>> self.unmemoize_request()
     >>> manager.existing_working_copies
     []
+    >>> shasattr(self.folder.page1, 'version_id')
+    False
 
 If we edit another page, another id is given
     >>> self.edit_page('page2')
@@ -101,9 +107,10 @@ traversing to the view
 
     >>> [self.edit_page('page%s' % idx) for idx in range(5)]
     [None, None, None, None, None]
+    >>> date_limit = (DateTime() - 1./86400).strftime('%Y/%m/%d %H:%M:%S')
     >>> self.unmemoize_request()
     >>> response = self.folder.restrictedTraverse('@@historymanager-purge-thispath')()
-    >>> sorted(response.split(), ['5', '4', '6', '7', '8', '2']
+    >>> sorted(response.split())
     ['2', '4', '5', '6', '7', '8']
 
 We can pass a date_limit parameter in the request
@@ -113,19 +120,18 @@ We can pass a date_limit parameter in the request
     [2, 4, 5, 6, 7, 8]
 
 Without date_limit we have 6 objects.
-Setting a date_limit and modyfying 2 objects we expect to have 4 objects 
-    >>> self.unmemoize_request()
 
-Now we set the date_limit
-    >>> self.request.set('date_limit', str(DateTime()))
+Setting a date_limit and modyfying 2 objects we expect to have 4 objects.
+    >>> self.request.set('date_limit', date_limit)
     >>> self.edit_page('page0')
     >>> self.edit_page('page2')
     >>> self.unmemoize_request()
+    >>> isinstance(view.get_date_limit(), DateTime)
+    True
     >>> sorted(view.filtered_history_ids())
-    [2, 4, 7, 8]
 
 Additionally we can filter by portal_type
-    >>> self.request.set('portal_type', 'Document'))
+    >>> self.request.set('portal_type', 'Document')
     >>> self.unmemoize_request()
     >>> sorted(view.filtered_history_ids())
     [4, 7, 8]
