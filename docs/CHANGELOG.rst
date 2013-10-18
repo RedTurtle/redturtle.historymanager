@@ -5,7 +5,8 @@ Changelog
 0.1.2 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Deleting version_id
+  [ale-rt]
 
 
 0.1.1 (2013-10-16)
