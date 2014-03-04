@@ -5,6 +5,7 @@ Changelog
 0.1.2 (unreleased)
 ------------------
 
+- Fix typo
 - Deleting version_id
   [ale-rt]
 

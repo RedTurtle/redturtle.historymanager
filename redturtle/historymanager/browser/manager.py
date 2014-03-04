@@ -113,7 +113,7 @@ class Manager(BrowserView):
         for key in keys:
             zope_version_history = repo._histories.get(key, None)
             if zope_version_history:
-                zope_version_history.versions = OOBTree()
+                zope_version_history._versions = OOBTree()
 
     def remove_version_id(self, history_id):
         ''' Remove the given keys from the repo
