@@ -5,7 +5,10 @@ Changelog
 0.1.3 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Added a logger
+- Committing after each history item is cleaned
+- The cleaning view catches exceptions and logs them
+  [ale-rt]
 
 
 0.1.2 (2014-03-04)

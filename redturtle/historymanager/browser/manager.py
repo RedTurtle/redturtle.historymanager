@@ -6,6 +6,8 @@ from Products.CMFCore.utils import getToolByName
 from Products.CMFEditions.utilities import dereference
 from Products.Five.browser import BrowserView
 from plone.memoize.view import memoize
+from redturtle.historymanager import logger
+from transaction import commit
 
 
 class Manager(BrowserView):
@@ -143,15 +145,21 @@ class Manager(BrowserView):
         self.remove_from_shadowstorage(history_id)
 
         self.remove_version_id(history_id)
+        commit()
 
     def __call__(self):
         ''' Not to be done like this
         '''
         history_ids = filter(bool, self.filtered_history_ids())
+        logger.info('Got %s ids to purge' % len(history_ids))
         if not history_ids:
             return 'No ids'
-        map(self.purge_all_revisions, history_ids)
-        return '\n'.join(map(str, history_ids))
+        for history_id in history_ids:
+            try:
+                self.purge_all_revisions(history_id)
+            except:
+                logger.exception("Problem purging history: %s" % history_id)
+        return '\n'.join(map(str, history_ids)) or 'OK'
 
 
 class DereferenceView(Manager):

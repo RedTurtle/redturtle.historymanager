@@ -5,6 +5,13 @@
 
   <browser:page
     for="*"
+    name="historymanager"
+    class=".manager.Manager"
+    permission="cmf.ManagePortal"
+  />
+
+  <browser:page
+    for="*"
     name="historymanager-dereference"
     class=".manager.DereferenceView"
     permission="cmf.ManagePortal"
