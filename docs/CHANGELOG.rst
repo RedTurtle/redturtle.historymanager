@@ -2,7 +2,7 @@ Changelog
 =========
 
 
-0.1.3 (unreleased)
+0.9.0 (2014-05-06)
 ------------------
 
 - Added a logger
